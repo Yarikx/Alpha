@@ -1,17 +1,29 @@
 import DatasetUtil._
-import scala.math.{ sin, cos }
+import scala.math._
 
 object AlphaDefs {
-  type FeatureKind = Symbol
+  type FeatureKind = FeatureName
   type FeatureValue = Double
-  type PointClass = Symbol
+  type PointClass = String
   type PointId = Int
   case class Point(id: PointId, pClass: PointClass)
   case class Feature(kind: FeatureKind, featureMap: Map[Point, FeatureValue])
-  
+
   type Surface = Seq[(Point, (FeatureValue, FeatureValue))]
   type Angle = Double
   type DecartResult = Seq[(Point, FeatureValue)]
+  
+  sealed abstract class FeatureName{
+    def second: String
+  }
+  case class SimpleName(s: String) extends FeatureName{
+    override def toString = s
+    def second = s
+  }
+  case class ComposedName(f1: FeatureName, f2:FeatureName) extends FeatureName{
+    override def toString = s"${f1.second} -> ${f2.second}"
+    def second = f2.second
+  }
 
   case class Dataset(points: Seq[Point], features: Seq[Feature]) {
 
@@ -20,8 +32,8 @@ object AlphaDefs {
     val featureMap = (for {
       Feature(kind, values) <- features
     } yield kind -> values) toMap
-    
-    require(classes.size == 2)
+
+    require(classes.size == 2, "number of classes must be 2")
 
     private def pointsWithFeature(feature: Feature) =
       points.zip(points.map(feature.featureMap(_)))
@@ -37,7 +49,7 @@ object AlphaDefs {
       left.size + right.size
     }
 
-    def bestFeature = features.maxBy(howGood)
+    lazy val bestFeature = features.maxBy(howGood)
 
     def decart(f1: Feature, f2: Feature) =
       for {
@@ -45,14 +57,10 @@ object AlphaDefs {
         left = f1.featureMap(point)
         right = f2.featureMap(point)
       } yield (point, (left, right))
+      
+   def without(feature: Feature) = 
+     copy(features = this.features.filterNot(_ == feature))
 
-  }
-
-  def proect(surface: Surface, alpha: Angle): DecartResult = {
-    for {
-      (point, (x, y)) <- surface
-      newFeatureVal = y / sin(alpha) + x * cos(alpha)
-    } yield (point, newFeatureVal)
   }
 
   def howGood(line: DecartResult) = {
@@ -60,5 +68,8 @@ object AlphaDefs {
     val (l, _, r) = splitByPred(line)(x => x._1.pClass == firstClass)
     l.size + r.size
   }
+
+  def produceFeature(kind: FeatureKind, proection: DecartResult) =
+    Feature(kind, proection.toMap)
 
 }
