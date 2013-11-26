@@ -9,7 +9,7 @@ import scala.swing.TabbedPane.Page
 
 object GraphicForm extends SimpleSwingApplication {
 
-  val ds = DatasetUtil.readDataset("/home/yarik/KPI/germany/inside/ds/crabO_MvsF.dat")
+  val ds = Novikov.mirrorDataset(DatasetUtil.readDataset("/home/yarik/KPI/germany/inside/ds/crabO_MvsF.dat"))
   val surface = {
     val bf = ds.bestFeature
     val scd = ds.without(bf).bestFeature
