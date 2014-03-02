@@ -42,18 +42,18 @@ object Novikov extends App {
       for (_ <- 1 to 100)
         yield for (_ <- 1 to vsize)
         yield r.nextDouble * 2 - 1
-        
-    def generateAllB(max: Double) = for(_ <- 1 to  100)
-      yield r.nextDouble*2*max - max
 
-    def testVector(v: Vector) = {
+    def generateAllB(max: Double) = for (_ <- 1 to 100)
+      yield r.nextDouble * 2 * max - max
+
+    def testVector(v: Vector, b: Double) = {
       val c1 = ds.classes.head
       val pointsVecMul =
         for (point <- ds.points.toList) yield {
           val sum = (for {
             (ai, feature) <- v zip ds.features
             featureVal = feature.featureMap(point)
-          } yield ai * featureVal).sum
+          } yield ai * featureVal).sum + b
           if (point.pClass == c1) sum
           else -sum
         }
@@ -61,45 +61,51 @@ object Novikov extends App {
       val (v1, v2) = pointsVecMul.partition(_ > 0)
       val sizes = (v1.size, v2.size)
       val notdivided = min(v1.size, v2.size)
-      println(s"notdivided points $sizes")
+      //      println(s"notdivided points $sizes")
       notdivided
     }
-    
+
     def pointVector(p: Point) = ds.features.map(f => f.featureMap(p))
-    
-    def ro(point: Point, v: Vector): Double = {
+
+    def ro(point: Point, v: Vector, b: Double): Double = {
       val pointVec = pointVector(point)
-      val up = abs(pointVec.zip(v).map { case (x, a) => x * a }.sum)
+      val up = abs(pointVec.zip(v).map { case (x, a) => x * a }.sum + b)
       val bottom = sqrt(v.map(x => x * x).sum)
       up / bottom
     }
-    
-    def far(p1: Point)= sqrt(pointVector(p1).map(x => x*x).reduce(_ + _))
-    
+
+    def far(p1: Point) = sqrt(pointVector(p1).map(x => x * x).reduce(_ + _))
+
     val max = ds.points.map(far).max
 
-    val vectorsWithGoodness = generateAllVectors.map(v => (v, testVector(v)))
+    val vectorsWithGoodness = for {
+      v <- generateAllVectors
+      b <- generateAllB(max)
+    } yield ((v, b), testVector(v, b))
     val minGoodness = vectorsWithGoodness.map(_._2).min
     val bestVectors = vectorsWithGoodness.collect {
       case (v, g) if g <= minGoodness => v
     }
-    val all = for (vector <- bestVectors) yield {
-      val pointRos = for (point <- ds.points) yield ro(point, vector)
-      pointRos.min
+    val all = for ((vector, b) <- bestVectors) yield {
+      val pointRos = for (point <- ds.points) yield ro(point, vector, b)
+      (vector, b, pointRos.min)
     }
-    all.max
+    val vec = all.maxBy(_._3)
+    println(s"best vector = $vec")
     //    if (all.isEmpty) None
     //    else Some(all.max)
+    vec._3
   }
 
   def calcFeaturesRo(ds: Dataset): List[(FeatureKind, Option[Double])] = {
     val Dataset(points, features) = ds
+    //    val svm = MySVM(ds)
     if (features.size == 1) List((features.head.kind, None))
     else {
       val featuresWithRo =
         features.map(f =>
           (f,
-            findBestSupportVector(ds.without(f))))
+            MySVM(ds.without(f)).solve))
 
       if (featuresWithRo.isEmpty) Nil
       else {
@@ -109,10 +115,7 @@ object Novikov extends App {
     }
   }
 
-  //  val ds = DatasetUtil.readDataset("/home/yarik/KPI/germany/inside/ds/my.dat")
-  val ds = DatasetUtil.readDataset("/home/yarik/KPI/germany/inside/ds/segmentation.dat")
-  //  val ds2 = mirrorDataset(ds)
-  //  val ro = findBestSupportVector(ds)
+  val ds = DatasetUtil.readDataset("/home/yarik/KPI/germany/inside/ds/crabO_MvsF.dat")
   val fs = calcFeaturesRo(ds)
   fs.foreach {
     case (kind, Some(ro)) => println(s"without $kind ro=$ro")

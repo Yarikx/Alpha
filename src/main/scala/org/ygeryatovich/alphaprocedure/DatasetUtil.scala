@@ -55,7 +55,7 @@ object DatasetUtil {
     })
 
     val features = mapmap.toSeq.sortBy(_._1).map {
-      case (i, map) => Feature(SimpleName(s"feature${i + 1}"), map)
+      case (i, map) => Feature(SimpleName(s"$i"), map)
     }
 
     val points = pointWithValues.map(_._1)

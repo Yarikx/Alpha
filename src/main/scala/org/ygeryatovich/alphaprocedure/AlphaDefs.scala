@@ -16,7 +16,9 @@ object AlphaDefs {
   type DecartResult = Seq[(Point, FeatureValue)]
 
   sealed abstract class FeatureName
-  case class SimpleName(s: String) extends FeatureName
+  case class SimpleName(s: String) extends FeatureName{
+    override def toString = s
+  }
   case class ComposedName(f1: Feature, f2: Feature) extends FeatureName
 
   case class Dataset(points: Seq[Point], features: Seq[Feature]) {
