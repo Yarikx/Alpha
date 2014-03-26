@@ -30,7 +30,7 @@ object MyDebugApp extends App {
   
   val bestFeature = bad.buildBestFeature(solved2, best.kind)
   
-  println ("checked mixed number " +bad.howGood(bestFeature))
+  println ("checked mixed number " +bad.howBad(bestFeature))
   
   good.buildAllFeatures(solved2, best)
   

@@ -48,9 +48,6 @@ class ProectionResultView(val surface: Surface, angle: Angle) {
       val minXY = min(-5, minV)
       val maxXY = max(5, maxV)
       
-      
-      
-      
       val domainAxis =  {
     		  val axis = new NumberAxis("")
     		  axis.setRange(minXY, maxXY)
@@ -91,12 +88,8 @@ class ProectionResultView(val surface: Surface, angle: Angle) {
         y = k*x
         line = new Line2D.Double(x, y, x1, y1)
       } plot.addAnnotation(new XYShapeAnnotation(line))
-      
-      
-
       val chart = new JFreeChart("title", JFreeChart.DEFAULT_TITLE_FONT, plot, true)
       
-
       new XYChart {
         override val peer = chart
       }

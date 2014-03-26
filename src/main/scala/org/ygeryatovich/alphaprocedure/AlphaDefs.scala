@@ -22,7 +22,6 @@ object AlphaDefs {
   case class ComposedName(f1: Feature, f2: Feature) extends FeatureName
 
   case class Dataset(points: Seq[Point], features: Seq[Feature]) {
-
     lazy val featureTypes = features.map(_.kind)
     lazy val classes = points.map(_.pClass).toSet
     lazy val featureMap = (for {
@@ -30,19 +29,17 @@ object AlphaDefs {
       kind = feature.kind
     } yield kind -> feature).toMap
 
-    lazy val bestFeature = features.minBy(howGood)
-
-    //    require(classes.size == 2, "number of classes must be 2")
+    lazy val bestFeature = features.minBy(howBad)
 
     private def pointsWithFeature(feature: Feature) =
       points.zip(points.map(feature.featureMap(_)))
 
     def splitByFeature(feature: Feature) = {
       val line = pointsWithFeature(feature).sortBy(_._2)
-      splitByPred(line)(x => x._1.pClass == classes.head)
+      splitBy(line)(x => x._1.pClass == classes.head)
     }
 
-    def howGood(feature: Feature) = {
+    def howBad(feature: Feature) = {
       val (left, mix, right) = splitByFeature(feature)
       mix.size
     }
@@ -71,7 +68,7 @@ object AlphaDefs {
         val (angle, secondKind) = x
         val secondFeature = featureMap(secondKind)
         val dec = decart(firstFeature, secondFeature)
-        val proection = proect(dec, angle)
+        val proection = proectPoints(dec, angle)
         val newFeature = Feature(ComposedName(firstFeature, secondFeature), proection.toMap)
         newFeature
       }
@@ -82,7 +79,7 @@ object AlphaDefs {
           val (angle, secondKind) = x
           val secondFeature = featureMap(secondKind)
           val dec = decart(firstFeature, secondFeature)
-          val proection = proect(dec, angle)
+          val proection = proectPoints(dec, angle)
           val newFeature = Feature(ComposedName(firstFeature, secondFeature), proection.toMap)
           (dec, angle) +: buildAllFeatures(tail, newFeature)
         case Seq() => Seq()
